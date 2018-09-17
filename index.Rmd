@@ -1,0 +1,175 @@
+--- 
+title: "General Education Course Registrations^[Report number 1801, DOI [10.17605/OSF.IO/MRJBD](https://doi.org/10.17605/OSF.IO/MRJBD)]"
+subtitle: "An Overview of Registration Patterns for Spring 2018"
+author: 
+  - "Dr. Clifton Franklund"
+  - "General Education Coordinator"
+date: "Spring 2018"
+output: 
+  bookdown::gitbook:
+    includes:
+      after_body: disqus.html
+description: An analysis of course registration patterns for spring 2018. This report may be used to evaluate the overall participation of units in assessment and the distribution of assessment methods.
+documentclass: article
+github-repo: WeeBeasties/1801
+link-citations: yes
+bibliography: references.bib
+site: bookdown::bookdown_site
+biblio-style: apalike
+---
+\addtolength{\headheight}{0.7cm}
+\thispagestyle{fancyplain}
+\lhead{\includegraphics[height=0.5cm]{art/logo.png}}
+\rhead{}
+\renewcommand{\headrulewidth}{0pt}
+
+```{R loadPackages, echo=FALSE, message=FALSE, warning=FALSE}
+
+#	LOAD PACKAGES
+
+library(tidyverse)	# tidy data science
+library(googlesheets)   # scrape Google sheet data from the web
+library(pander)         # used to report session settings
+```
+
+
+# Abstract {#abstract -}
+> *Assessment is not a spreadsheet; it's a conversation.*   
+> --- Irmeli Halinen
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur pellentesque tortor ac turpis congue venenatis. Curabitur congue justo est, non feugiat massa euismod sit amet. Fusce tincidunt, sapien in malesuada tempus, sem mi interdum turpis, in finibus sem nisl sed ex. Mauris in tristique nisl. Nunc pellentesque metus et velit aliquam, eu rhoncus diam condimentum. Quisque nec libero at odio tempor aliquam. Fusce at lacus porttitor, lobortis nisl nec, commodo tellus. Phasellus interdum sapien varius ipsum consectetur tincidunt. Aenean posuere turpis at efficitur lobortis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur pellentesque tortor ac turpis congue venenatis. Curabitur congue justo est, non feugiat massa euismod sit amet. Fusce tincidunt, sapien in malesuada tempus, sem mi interdum turpis, in finibus sem nisl sed ex. Mauris in tristique nisl. Nunc pellentesque metus et velit aliquam, eu rhoncus diam condimentum. Quisque nec libero at odio tempor aliquam. Fusce at lacus porttitor, lobortis nisl nec, commodo tellus. Phasellus interdum sapien varius ipsum consectetur tincidunt. Aenean posuere turpis at efficitur lobortis. 
+
+# Introduction {#introduction -}
+
+
+# Methods {#methods -}
+
+## Data provenance {-}
+Data provenance refers to a system that permits tracking of the origin, movement, modification, and utilization of data sets [@Buneman2001]. The provenance of General Education data will be explicitly declared to facilitate the reproducibility and extensibility of these studies.
+
+### Location of public website files {-}
+All files related to this report can be found online at the Open Science Framework [@Nosek2012]. This site contains all of the files needed to reproduce this report from the de-identified data set. The site's url is [https://osf.io/t6u8m/](https://osf.io/t6u8m/).
+
+### Session information {-}
+This report was written using RStudio [@Rstudio] and the R statistical programming language [@R]. These products are free to download for PC, Macintosh, and Linux operating systems. The following information pertains to the session parameters used to generate this report. If you have trouble reproducing this report, it may be due to different session parameters. You may contact [Dr. Franklund](mailto:CliftonFranklund@ferris.edu) if you need assistance.
+
+```{R printSessionInfo, echo=FALSE, comment=FALSE, error=FALSE, results='asis'}
+pander(sessionInfo())
+```
+
+### Processing instructions {-}
+This project produced a computationally reproducible assessment report (this document). Anyone wishing to recreate this report from the source document will need to install the following on their computer:
+
+1. [An installation of the R programming language](https://www.r-project.org)
+2. [An installation of the RStudio IDE](https://www.rstudio.com/products/rstudio/download3/)
+3. [An installation of LaTeX](https://www.latex-project.org/get/)
+
+The necessary source files include the de-identified data set (BIOL200Data.csv), Rmarkdown code files (index.Rmd, 01-Introduction.Rmd, 02-Methods.Rmd, 03-Results.Rmd, 04-Discussion.Rmd, and 05-References.Rmd), bibtex reference file (references.bib), and custom art file in the /art folder.
+
+To process the files, you must first open the project in RStudio. Click on the "Build Book" button in the Build menu. Bookdown allows you to build this project as git_book (html site), pdf_book (via LaTeX), or epub_book (compatible with iBooks and other e-book readers).
+
+### Citation of this work {-}
+All of the de-identified data, analysis code, and documentation that constitute this report project may be freely used, modified, and shared. The de-identified data set, BIOL200Data.csv, is released under the Creative Commons [CC0 license](https://creativecommons.org/publicdomain/zero/1.0/). All documentation, including README.md, Codebook.md, and this report, are released under the Creative Commons [CC-BY](https://creativecommons.org/licenses/by/4.0/) licence. Any questions, comments, or suggestions may be sent to [Dr. Franklund](mailto:CliftonFranklund@ferris.edu).
+
+## Retrieving the registration data {#googlesheets -}  
+```{R getData, echo=FALSE, message=FALSE, warning=FALSE}
+# UNCOMMENT THIS BLOCK TO GET THE DATA FROM GOOGLE
+# authentication may be required via a web browswer for access...
+myGoogleSheet <- gs_title("Core Competency Assessment  (Responses)")
+rawData <- myData <- gs_read(ss = myGoogleSheet, ws = "Form Responses 1")
+names(rawData)[names(rawData) == 'CORE COMPETENCY'] <- 'COMPETENCY'
+names(rawData)[names(rawData) == 'STANDARD MEASURE'] <- 'MEASURE'
+
+myDups <- rawData %>% group_by(COMPETENCY,EMAIL,MEASURE) %>% filter(n()>1) %>% arrange(EMAIL,MEASURE,COMPETENCY,COURSE)
+
+myData <- as.data.frame(rawData)
+myData$COMPETENCY <- as.factor(myData$COMPETENCY)
+myData$COMPETENCY <- factor(myData$COMPETENCY, levels=rev(levels(myData$COMPETENCY)))
+
+myData$MEASURE <- as.factor(myData$MEASURE)
+myData$MEASURE <- factor(myData$MEASURE, levels=rev(levels(myData$MEASURE)))
+myData <- myData[ ,-c(1,4,5,7,8)]
+
+write.csv(myData, file="data/registrations.csv", row.names = FALSE)
+write.csv(myData, file="docs/data/registrations.csv", row.names = FALSE)
+
+
+# UNCOMMENT THIS BLOCK TO READ THE CSV FILE FOR THE DATA
+# personal identifying information has been removed...
+
+#myData <- read.csv("data/Spring2018.csv")
+#names(myData)[names(myData) == 'CORE.COMPETENCY'] <- 'COMPETENCY'
+#names(myData)[names(myData) == 'STANDARD.MEASURE'] <- 'MEASURE'
+#myData$COMPETENCY <- factor(myData$COMPETENCY, levels = rev(levels(myData$COMPETENCY))) 
+#myData$MEASURE <- factor(myData$MEASURE, levels = rev(levels(myData$MEASURE)))
+
+```
+
+## Data collection {#data -}
+All registration records for the fall of 2017 were collated and de-identified. The data file, 'registrations.csv', contains only the course name (e.g. BIOL 101), the core competency (e.g. Natural Sciences), and the standardized measure (e.g. Selected Response Exam). The datafile is [available here](data/registrations.csv).
+
+# Results and Discussion {#results -}  
+```{R summarizeByMeasureAndCompetency, echo=FALSE, message=FALSE, warning=FALSE}
+competencyCounts <- myData %>%
+	group_by(COMPETENCY) %>%
+	summarise(COUNT=n())
+
+measureCounts <- myData %>%
+	group_by(MEASURE) %>%
+	summarise(COUNT=n())
+```
+ 
+A total of `r length(myData$COMPETENCY)` registrations have been completed as of `r format(Sys.Date(),format="%B %d, %Y")`. This represents the efforts of `r length(unique(rawData$NAME))` faculty, and includes a total of `r length(unique(rawData$COURSE))` different courses. These numbers are down from last semester as shown by Figure \@ref(fig:comparison).
+
+```{r comparison, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Comparison of registrations between Fall 2017 and Spring 2018."}
+group <- c("Registrations","Registrations","Faculty","Faculty","Courses","Courses")
+semester <- c("Fall 2017","Spring 2018","Fall 2017","Spring 2018","Fall 2017","Spring 2018")
+total <- c(281,length(rawData$COMPETENCY),123,length(unique(rawData$NAME)),138,length(unique(rawData$COURSE)))
+myData <- data.frame(Group=group,Semester=semester,Total=total)
+ggplot(data=myData, aes(x=Semester, y=Total, fill=Semester)) +
+  geom_bar(stat="identity", position="dodge") +
+  geom_text(aes(label=Total), vjust=1.6, color="white", size=5) +
+  scale_fill_manual(values=c("firebrick", "gold")) +
+  facet_grid(.~Group) +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(strip.background = element_rect(fill="gray25")) +
+  theme(strip.text = element_text(colour="white", size=12, face="bold"))
+```
+
+As compared to Fall 2017, the total number of registrations was down by `r round(100*(1-(length(rawData$COMPETENCY)/281)),1)`%. Moreover, the number of faculty members registering to report assessment was strongly down (by `r round(100*(1-(length(unique(rawData$NAME))/123)),1)`%). This primarily reflects the fact the the Ferris Non-Tenured Faculty Organization members have elected to not participate in assessment. Since those members registered but did not report data last semester, the actual amound of data that we collect this semester may still be similar to that of last semester. Finally, the number of courses reporting is also down this semester (by `r round(100*(1-(length(unique(rawData$COURSE))/138)),1)`%). This may reflect an actual difference in the number of General Education courses offered each semester. Or... it may just reflect a decreasing rate of partipation in this process.
+
+```{block question1, type='question'}
+Are you concerned by the decrease in registrations this semester? What factors do you think are contributing to this trend? What suggestions do you have to address the decrease in registrations?
+```
+
+
+The distribution of the registrations between the eight core competencies for the spring semester is shown in Figure \@ref(fig:plotByCompetency).
+
+```{r plotByCompetency, echo=FALSE, fig.cap="Distribution of course registrations by core competency."}
+# Plot of registrations by competency -------------------------------------
+ggplot(competencyCounts, aes(x=COMPETENCY, y=COUNT)) +
+	geom_bar(stat = "identity", fill = "Firebrick") +
+	geom_text(aes(label = COUNT, y = COUNT + 2.0),position = position_dodge(0), vjust = 0.5) +
+	theme_classic(base_size = 14) +
+	coord_flip()
+```
+
+- A total of `r sum(measureCounts[grepl("01|02|03|04",measureCounts$MEASURE), 2])` exams were registered (`r round(sum(measureCounts[grepl("01|02|03|04",measureCounts$MEASURE), 2])/length(myData$COMPETENCY)*100,1)`%).  
+- A total of `r sum(measureCounts[grepl("05|06|07|08|09|10|11",measureCounts$MEASURE), 2])` student products were registered (`r round(sum(measureCounts[grepl("05|06|07|08|09|10|11",measureCounts$MEASURE), 2])/length(myData$COMPETENCY)*100,1)`%).  
+- A total of `r sum(measureCounts[grepl("12|13|14",measureCounts$MEASURE), 2])` student performances were registered (`r round(sum(measureCounts[grepl("12|13|14",measureCounts$MEASURE), 2])/length(myData$COMPETENCY)*100,1)`%).  
+
+
+```{r plotByMeasure, echo=FALSE, fig.cap="Distribution of course registrations by standardized measure."}
+# Plot of registrations by measure ----------------------------------------
+ggplot(measureCounts, aes(x=MEASURE, y=COUNT)) +
+	geom_bar(stat = "identity", fill = "Firebrick") +
+	geom_text(aes(label = COUNT, y = COUNT + 3.0),position = position_dodge(0), vjust = 0.5) +
+	theme_classic(base_size = 12) +
+	coord_flip()
+```
+
+```{block question2, type='question'}
+Do you think that there are too many exams in this mix? What is the desired balance between exams, products, and performances for General Education?
+```
+
