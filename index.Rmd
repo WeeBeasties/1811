@@ -123,7 +123,7 @@ A total of `r length(myData$COMPETENCY)` registrations have been completed as of
 
 ```{r comparison, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Comparison of registrations between Fall 2017 and Spring 2018."}
 group <- c("Registrations","Registrations","Faculty","Faculty","Courses","Courses")
-semester <- c("Fall 2017","Spring 2018","Fall 2017","Spring 2018","Fall 2017","Spring 2018")
+semester <- c("Fall 2017","Fall 2018","Fall 2017","Fall 2018","Fall 2017","Fall 2018")
 total <- c(281,length(rawData$COMPETENCY),123,length(unique(rawData$NAME)),138,length(unique(rawData$COURSE)))
 myData <- data.frame(Group=group,Semester=semester,Total=total)
 ggplot(data=myData, aes(x=Semester, y=Total, fill=Semester)) +
